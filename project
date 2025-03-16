@@ -1,0 +1,329 @@
+
+# Product and Derived Classes
+
+class Product:
+    """
+    Base Product class representing a generic product.
+    Attributes:
+        - product_id: Unique identifier for the product.
+        - name: Name of the product.
+        - price: Price of the product.
+        - quantity: Available quantity of the product.
+    """
+    def __init__(self, product_id, name, price, quantity):
+        # Initialize the product with its ID, name, price, and quantity.
+        self.product_id = product_id
+        self.name = name
+        self.price = price
+        self.quantity = quantity
+
+    def update_quantity(self, new_quantity):
+        """
+        Update the quantity of the product.
+        Args:
+            new_quantity: The new quantity value to set.
+        """
+        self.quantity = new_quantity
+
+    def get_product_info(self):
+        """
+        Return a string with the product's basic information.
+        """
+        return f"ID: {self.product_id}, Name: {self.name}, Price: {self.price}, Quantity: {self.quantity}"
+
+
+class DigitalProduct(Product):
+    """
+    DigitalProduct class that extends the base Product class.
+    Additional Attributes:
+        - file_size: Size of the digital file (in MB).
+        - download_link: URL link for downloading the product.
+    """
+    def __init__(self, product_id, name, price, quantity, file_size, download_link):
+        # Call the constructor of the base Product class to initialize common attributes.
+        super().__init__(product_id, name, price, quantity)
+        self.file_size = file_size
+        self.download_link = download_link
+
+    def get_product_info(self):
+        """
+        Override the base method to include digital-specific details.
+        """
+        # Retrieve basic product info using the parent class method.
+        base_info = super().get_product_info()
+        # Append additional information specific to digital products.
+        return f"{base_info}, File Size: {self.file_size}MB, Download Link: {self.download_link}"
+
+
+class PhysicalProduct(Product):
+    """
+    PhysicalProduct class that extends the base Product class.
+    Additional Attributes:
+        - weight: Weight of the product (in kg).
+        - dimensions: Dimensions of the product (e.g., "30x20x2").
+        - shipping_cost: Cost associated with shipping the product.
+    """
+    def __init__(self, product_id, name, price, quantity, weight, dimensions, shipping_cost):
+        # Initialize common attributes via the base class constructor.
+        super().__init__(product_id, name, price, quantity)
+        self.weight = weight
+        self.dimensions = dimensions
+        self.shipping_cost = shipping_cost
+
+    def get_product_info(self):
+        """
+        Override the base method to include physical product-specific details.
+        """
+        # Retrieve basic product info from the parent class.
+        base_info = super().get_product_info()
+        # Append physical-specific details such as weight, dimensions, and shipping cost.
+        return (f"{base_info}, Weight: {self.weight}kg, Dimensions: {self.dimensions}, "
+                f"Shipping Cost: {self.shipping_cost}")
+
+
+# Cart Class
+
+class Cart:
+    """
+    Cart class to manage a collection of products.
+    Uses encapsulation to keep the list of products private.
+    """
+    def __init__(self):
+        # Private list to store products added to the cart.
+        self.__cart_items = []
+
+    def add_product(self, product):
+        """
+        Add a product to the cart.
+        Args:
+            product: An instance of a Product (or one of its subclasses).
+        """
+        self.__cart_items.append(product)
+        # Provide feedback that the product was added.
+        print(f"Added product: {product.name}")
+
+    def remove_product(self, product_id):
+        """
+        Remove a product from the cart by its product_id.
+        Args:
+            product_id: The unique identifier of the product to be removed.
+        """
+        # Search for the product in the cart using its ID.
+        for product in self.__cart_items:
+            if product.product_id == product_id:
+                self.__cart_items.remove(product)
+                print(f"Removed product: {product.name}")
+                return
+        # If not found, notify the user.
+        print(f"Product with ID {product_id} not found in cart.")
+
+    def view_cart(self):
+        """
+        Return a string representation of all products in the cart.
+        """
+        if not self.__cart_items:
+            return "Cart is empty."
+        # Generate a list of product information strings.
+        details = "\n".join([p.get_product_info() for p in self.__cart_items])
+        return details
+
+    def calculate_total(self):
+        """
+        Calculate the total price of all products in the cart.
+        """
+        # Multiply price by quantity for each product and sum them up.
+        total = sum(product.price * product.quantity for product in self.__cart_items)
+        return total
+
+    def clear_cart(self):
+        """
+        Clear all products from the cart.
+        """
+        self.__cart_items = []
+
+
+# User Class
+
+class User:
+    """
+    User class represents a customer with a unique shopping cart.
+    Provides abstraction over cart operations such as adding products,
+    removing products, and checking out.
+    """
+    def __init__(self, user_id, name):
+        # Initialize the user with a unique ID and a name.
+        self.user_id = user_id
+        self.name = name
+        # Each user has their own Cart instance.
+        self.cart = Cart()
+
+    def add_to_cart(self, product):
+        """
+        Add a product to the user's cart.
+        Args:
+            product: An instance of a Product (or its subclasses).
+        """
+        self.cart.add_product(product)
+
+    def remove_from_cart(self, product_id):
+        """
+        Remove a product from the user's cart using its product_id.
+        Args:
+            product_id: The unique identifier of the product to be removed.
+        """
+        self.cart.remove_product(product_id)
+
+    def checkout(self, discount=None):
+        """
+        Process the checkout for the user.
+        Args:
+            discount: (Optional) A discount instance to apply to the cart total.
+        Returns:
+            The final total after discount is applied.
+        """
+        # Calculate the total cost of items in the cart.
+        total = self.cart.calculate_total()
+        discount_amount = 0
+        # If a discount is provided, calculate the discount amount.
+        if discount is not None:
+            discount_amount = discount.apply_discount(total)
+        # Compute the final total after applying the discount.
+        final_total = total - discount_amount
+        # Print a summary of the checkout process.
+        print(f"User: {self.name} | Cart Total: {total} | Discount: {discount_amount} | Final Total: {final_total}")
+        # Clear the cart after a successful checkout.
+        self.cart.clear_cart()
+        return final_total
+
+
+# Discount and Derived Classes
+
+class Discount:
+    """
+    Base Discount class that provides a template for discount strategies.
+    """
+    def apply_discount(self, total_amount):
+        # Raise an error if this method is not overridden.
+        raise NotImplementedError("Subclasses must implement the apply_discount method")
+
+class PercentageDiscount(Discount):
+    """
+    Discount implementation that applies a percentage-based discount.
+    Attributes:
+        - percentage: The percentage of the total amount to discount.
+    """
+    def __init__(self, percentage):
+        self.percentage = percentage
+
+    def apply_discount(self, total_amount):
+        """
+        Calculate and return the discount amount based on a percentage of the total.
+        """
+        return total_amount * (self.percentage / 100)
+
+class FixedAmountDiscount(Discount):
+    """
+    Discount implementation that applies a fixed discount amount.
+    Attributes:
+        - amount: The fixed amount to subtract from the total.
+    """
+    def __init__(self, amount):
+        self.amount = amount
+
+    def apply_discount(self, total_amount):
+        """
+        Return the fixed discount amount.
+        Ensures that the discount does not exceed the total amount.
+        """
+        return self.amount if self.amount <= total_amount else total_amount
+
+
+# Testing the Implementation
+
+if __name__ == "__main__":
+    # Create sample products for testing.
+
+    # Create 2 Digital Products with appropriate attributes.
+    digital1 = DigitalProduct(
+        product_id=101,
+        name="E-book",
+        price=15.0,
+        quantity=2,
+        file_size=5,             # File size in MB.
+        download_link="http://download.ebook.com"
+    )
+    digital2 = DigitalProduct(
+        product_id=102,
+        name="Online Course",
+        price=99.0,
+        quantity=1,
+        file_size=500,           # File size in MB.
+        download_link="http://download.course.com"
+    )
+    
+    # Create 3 Physical Products with appropriate attributes.
+    physical1 = PhysicalProduct(
+        product_id=201,
+        name="Laptop",
+        price=1200.0,
+        quantity=1,
+        weight=2.5,              # Weight in kg.
+        dimensions="30x20x2",    # Dimensions as a string.
+        shipping_cost=25.0
+    )
+    physical2 = PhysicalProduct(
+        product_id=202,
+        name="Headphones",
+        price=150.0,
+        quantity=2,
+        weight=0.3,              # Weight in kg.
+        dimensions="15x10x5",    # Dimensions as a string.
+        shipping_cost=5.0
+    )
+    physical3 = PhysicalProduct(
+        product_id=203,
+        name="Smartphone",
+        price=800.0,
+        quantity=1,
+        weight=0.4,              # Weight in kg.
+        dimensions="14x7x0.7",   # Dimensions as a string.
+        shipping_cost=10.0
+    )
+
+    # Create 2 User instances.
+    user1 = User(user_id=1, name="Alice")
+    user2 = User(user_id=2, name="Bob")
+
+    # Add products to each user's cart:
+    # Alice's cart gets digital products.
+    user1.add_to_cart(digital1)
+    user1.add_to_cart(digital2)
+
+    # Bob's cart gets physical products.
+    user2.add_to_cart(physical1)
+    user2.add_to_cart(physical2)
+    user2.add_to_cart(physical3)
+
+    # Display the contents of each user's cart.
+    print("\n--- Alice's Cart ---")
+    print(user1.cart.view_cart())
+    print("\n--- Bob's Cart ---")
+    print(user2.cart.view_cart())
+
+    # Create discount instances for each user.
+    # A 10% percentage discount for Alice.
+    discount_alice = PercentageDiscount(percentage=10)
+    # A fixed discount of $50 for Bob.
+    discount_bob = FixedAmountDiscount(amount=50)
+
+    # Perform the checkout process for each user.
+    print("\n--- Checkout Process ---")
+    final_total_alice = user1.checkout(discount=discount_alice)
+    final_total_bob = user2.checkout(discount=discount_bob)
+
+    # After checkout, verify that each cart is empty.
+    print("\n--- Post-checkout ---")
+    print("Alice's Cart:", user1.cart.view_cart())
+    print("Bob's Cart:", user2.cart.view_cart())
+
+
